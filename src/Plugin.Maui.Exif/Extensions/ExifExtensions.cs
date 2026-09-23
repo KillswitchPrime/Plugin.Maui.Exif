@@ -217,6 +217,18 @@ public static class ExifExtensions
         newExifData.Latitude = null;
         newExifData.Longitude = null;
         newExifData.Altitude = null;
+        
+        // Remove all GPS-related entries from AllTags so stale raw tag values
+        // aren't re-written to the file or shown in the UI as still present.
+        var gpsKeys = newExifData.AllTags.Keys
+            .Where(k => k.Contains("GPS", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        foreach (var key in gpsKeys)
+        {
+            newExifData.AllTags.Remove(key);
+        }
+        
         return newExifData;
     }
 

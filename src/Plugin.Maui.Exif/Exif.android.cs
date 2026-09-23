@@ -555,10 +555,25 @@ partial class ExifImplementation : IExif
         {
             exifInterface.SetLatLong(exifData.Latitude.Value, exifData.Longitude.Value);
         }
+else
+        {
+            // Explicitly clear any pre-existing GPS attributes on disk.
+            // ExifInterface only overwrites attributes it's told to set, so simply
+            // skipping SetLatLong leaves stale GPS data (including timestamp,
+            // processing method, etc.) in the file untouched.
+            ClearAllGpsAttributes(exifInterface);
+        }
 
         if (exifData.Altitude.HasValue)
         {
             exifInterface.SetAltitude(exifData.Altitude.Value);
+        }
+        else if (!exifData.Latitude.HasValue || !exifData.Longitude.HasValue)
+        {
+            // Already covered by ClearAllGpsAttributes above when lat/long are also
+            // absent; handle the case where only altitude is missing on its own.
+            exifInterface.SetAttribute(ExifInterface.TagGpsAltitude, null);
+            exifInterface.SetAttribute(ExifInterface.TagGpsAltitudeRef, null);
         }
 
         // Write custom tags from AllTags dictionary
@@ -568,6 +583,49 @@ partial class ExifImplementation : IExif
             {
                 exifInterface.SetAttribute(tag.Key, tag.Value.ToString());
             }
+        }
+    }
+
+    private static void ClearAllGpsAttributes(ExifInterface exifInterface)
+    {
+        var gpsTags = new[]
+        {
+            ExifInterface.TagGpsLatitude,
+            ExifInterface.TagGpsLatitudeRef,
+            ExifInterface.TagGpsLongitude,
+            ExifInterface.TagGpsLongitudeRef,
+            ExifInterface.TagGpsAltitude,
+            ExifInterface.TagGpsAltitudeRef,
+            ExifInterface.TagGpsTimestamp,
+            ExifInterface.TagGpsDatestamp,
+            ExifInterface.TagGpsProcessingMethod,
+            ExifInterface.TagGpsAreaInformation,
+            ExifInterface.TagGpsDifferential,
+            ExifInterface.TagGpsDop,
+            ExifInterface.TagGpsMapDatum,
+            ExifInterface.TagGpsMeasureMode,
+            ExifInterface.TagGpsSatellites,
+            ExifInterface.TagGpsSpeed,
+            ExifInterface.TagGpsSpeedRef,
+            ExifInterface.TagGpsStatus,
+            ExifInterface.TagGpsTrack,
+            ExifInterface.TagGpsTrackRef,
+            ExifInterface.TagGpsImgDirection,
+            ExifInterface.TagGpsImgDirectionRef,
+            ExifInterface.TagGpsDestBearing,
+            ExifInterface.TagGpsDestBearingRef,
+            ExifInterface.TagGpsDestDistance,
+            ExifInterface.TagGpsDestDistanceRef,
+            ExifInterface.TagGpsDestLatitude,
+            ExifInterface.TagGpsDestLatitudeRef,
+            ExifInterface.TagGpsDestLongitude,
+            ExifInterface.TagGpsDestLongitudeRef,
+            ExifInterface.TagGpsVersionId
+        };
+
+        foreach (var tag in gpsTags)
+        {
+            exifInterface.SetAttribute(tag, null);
         }
     }
 
