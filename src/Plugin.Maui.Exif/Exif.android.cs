@@ -555,7 +555,7 @@ partial class ExifImplementation : IExif
         {
             exifInterface.SetLatLong(exifData.Latitude.Value, exifData.Longitude.Value);
         }
-else
+        else
         {
             // Explicitly clear any pre-existing GPS attributes on disk.
             // ExifInterface only overwrites attributes it's told to set, so simply
